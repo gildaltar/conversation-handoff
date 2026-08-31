@@ -18,25 +18,69 @@ The serialized continuation state is model-oriented and stays hidden unless the 
 
 The plugin also infers whether the next unresolved action is better suited to ordinary Chat or ChatGPT Work.
 
-### Mobile bootstrap
+## Install on ChatGPT Desktop
 
-`MOBILE.md` is the fallback entry point for iOS/mobile/web surfaces where the repo-installed skill is not directly available.
+The repository contains a native `.codex-plugin/plugin.json` plugin plus a personal-marketplace installer. The installer copies the plugin to the personal ChatGPT/Codex plugin directory, merges a `conversation-handoff` entry into `~/.agents/plugins/marketplace.json`, removes stale cached copies of this plugin, and marks it `INSTALLED_BY_DEFAULT`.
 
-The mobile runner now uses a single-tap transport instead of printing the handoff as a code block. It constructs a fresh-chat URL whose `prompt` value contains the percent-encoded continuation state and renders only:
+### Windows
+
+Open PowerShell and run:
+
+```powershell
+irm https://raw.githubusercontent.com/gildaltar/conversation-handoff/main/install-windows.ps1 | iex
+```
+
+Then completely quit ChatGPT Desktop and reopen it. Invoke the plugin in a chat with:
+
+```text
+@conversation-handoff
+```
+
+If it is not immediately visible, open the Plugins Directory once and select the **Personal Plugins** source.
+
+### macOS
+
+Open Terminal and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gildaltar/conversation-handoff/main/install-macos.sh | bash
+```
+
+Then completely quit ChatGPT Desktop and reopen it, and invoke:
+
+```text
+@conversation-handoff
+```
+
+### Codex CLI alternative
+
+The repo also exposes a repo marketplace, so Codex can add it directly:
+
+```bash
+codex plugin marketplace add gildaltar/conversation-handoff --ref main
+```
+
+Use ChatGPT Desktop to install and test repo/local plugins.
+
+## Mobile bootstrap
+
+`MOBILE.md` at the repository root remains a fallback entry point for iOS/mobile/web surfaces where the installed local plugin is not available.
+
+The installed plugin also bundles its own `MOBILE.md` transport helper so the cached plugin package is self-contained.
+
+The fallback transport constructs a fresh-chat URL whose `prompt` value contains the percent-encoded continuation state and renders only:
 
 **Open in a new session?**
 
 The payload remains hidden inside the link target rather than appearing in the conversation.
 
-Because ChatGPT does not currently expose a supported public API/deep-link contract for external code to force-create a Chat or Work session and automatically submit arbitrary context, behavior after tapping can vary by surface. A mobile client may open a fresh chat with the prompt prefilled and still require the user to press Send. The handoff preserves the inferred `chat`/`work` destination, but the runner does not invent undocumented parameters to force Work mode or auto-submit.
-
-If ChatGPT later exposes a native seeded-session action, the skill is designed to prefer it over URL transport.
+Because ChatGPT does not currently expose a supported public API/deep-link contract for arbitrary code to force-create a Chat or Work session and automatically submit arbitrary context, behavior after tapping can vary by surface. The handoff preserves the inferred `chat`/`work` destination and does not invent undocumented Work-mode or auto-submit parameters.
 
 ## Platform boundary
 
-The plugin can prepare a loss-minimized handoff and request a supported new-session action when the current ChatGPT surface exposes one. It must never claim that it opened a new session when the host did not actually do so.
+This repository intentionally does **not** bundle an MCP server. The handoff is fundamentally a conversation-context workflow, so a bundled MCP server would not improve access to the source chat and would make local/imported plugin availability more restrictive on some ChatGPT surfaces.
 
-This repository intentionally does **not** bundle an MCP server. A server is unnecessary for the current mobile transport and would add hosting, persistence, authentication, and availability requirements without solving ChatGPT's current lack of a supported session-creation API.
+The plugin can prepare a loss-minimized handoff and use a supported native seeded-session action if ChatGPT exposes one. Otherwise it uses its one-tap fallback transport. It must never claim that it opened a new session when the host did not actually do so.
 
 ## Repository layout
 
@@ -48,11 +92,14 @@ This repository intentionally does **not** bundle an MCP server. A server is unn
 ├── .github/
 │   └── workflows/
 │       └── validate-plugin.yml
+├── install-windows.ps1
+├── install-macos.sh
 ├── MOBILE.md
 ├── plugins/
 │   └── conversation-handoff/
 │       ├── .codex-plugin/
 │       │   └── plugin.json
+│       ├── MOBILE.md
 │       └── skills/
 │           └── conversation-handoff/
 │               ├── SKILL.md
@@ -64,32 +111,14 @@ This repository intentionally does **not** bundle an MCP server. A server is unn
 └── LICENSE
 ```
 
-## Install / test
-
-The repository includes a repo-scoped plugin marketplace. On a supported development surface, add this repository as a marketplace source and install **Conversation Handoff** from that source.
-
-For Codex CLI, the repository can be added as a marketplace source with:
-
-```bash
-codex plugin marketplace add gildaltar/conversation-handoff
-```
-
-OpenAI currently documents repo/local marketplace authoring primarily for ChatGPT desktop and Codex. Availability of custom or repo-sourced plugins can vary by plan, workspace, account rollout, and product surface. Publishing to the universal Plugin Directory is a separate review process.
-
-On mobile, the bootstrap can be invoked directly by asking ChatGPT to open and execute:
-
-`https://raw.githubusercontent.com/gildaltar/conversation-handoff/main/MOBILE.md`
-
-against the desired source conversation.
-
 ## Invocation
 
 Examples:
 
+- `@conversation-handoff`
 - `@conversation-handoff condense this chat`
 - `@conversation-handoff checkpoint this conversation`
 - `@conversation-handoff move this into a clean session`
-- `Open and execute MOBILE.md against this conversation`
 
 The skill description also allows automatic selection when the host supports it.
 
