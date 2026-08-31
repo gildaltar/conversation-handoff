@@ -10,6 +10,8 @@ MANIFEST = PLUGIN_ROOT / ".codex-plugin" / "plugin.json"
 SKILL = PLUGIN_ROOT / "skills" / "conversation-handoff" / "SKILL.md"
 SCHEMA = PLUGIN_ROOT / "skills" / "conversation-handoff" / "references" / "HANDOFF_SCHEMA.md"
 EVALS = PLUGIN_ROOT / "skills" / "conversation-handoff" / "references" / "EVALS.md"
+TRANSPORT = PLUGIN_ROOT / "MOBILE.md"
+WINDOWS_INSTALLER = ROOT / "install-windows.ps1"
 
 
 def require(condition: bool, message: str) -> None:
@@ -43,7 +45,14 @@ def main() -> None:
     require(source.get("source") == "local", "marketplace source must be local for repo-scoped plugin")
     require(source.get("path") == "./plugins/conversation-handoff", "marketplace source path is incorrect")
 
-    for path in (SKILL, SCHEMA, EVALS):
+    policy = entry.get("policy", {})
+    require(
+        policy.get("installation") in {"AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"},
+        "marketplace installation policy is invalid",
+    )
+    require(policy.get("authentication") == "ON_INSTALL", "marketplace authentication policy must be ON_INSTALL")
+
+    for path in (SKILL, SCHEMA, EVALS, TRANSPORT, WINDOWS_INSTALLER):
         require(path.exists(), f"missing {path.relative_to(ROOT)}")
 
     skill_text = SKILL.read_text(encoding="utf-8")
@@ -51,6 +60,15 @@ def main() -> None:
     require("name: conversation-handoff" in skill_text, "SKILL.md frontmatter name is missing")
     require("description:" in skill_text, "SKILL.md frontmatter description is missing")
     require("Open in a new session?" in skill_text, "handoff prompt text is missing")
+
+    transport_text = TRANSPORT.read_text(encoding="utf-8")
+    require("skills/conversation-handoff/SKILL.md" in transport_text, "bundled transport must point to the bundled skill")
+    require("HANDOFF_SCHEMA.md" in transport_text, "bundled transport must point to the bundled schema")
+
+    installer_text = WINDOWS_INSTALLER.read_text(encoding="utf-8")
+    require(".codex\\plugins\\conversation-handoff" in installer_text, "Windows installer plugin destination is incorrect")
+    require(".agents\\plugins\\marketplace.json" in installer_text, "Windows installer marketplace destination is incorrect")
+    require("INSTALLED_BY_DEFAULT" in installer_text, "Windows installer should install plugin by default")
 
     forbidden = [
         PLUGIN_ROOT / ".mcp.json",
