@@ -1,0 +1,20 @@
+{
+  "name": "conversation-handoff",
+  "interface": {
+    "displayName": "Conversation Handoff"
+  },
+  "plugins": [
+    {
+      "name": "conversation-handoff",
+      "source": {
+        "source": "local",
+        "path": "./plugins/conversation-handoff"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

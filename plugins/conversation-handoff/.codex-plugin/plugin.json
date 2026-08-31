@@ -1,0 +1,33 @@
+{
+  "name": "conversation-handoff",
+  "version": "1.0.0",
+  "description": "Distill long ChatGPT conversations into compact, loss-minimized continuation state for clean-session handoffs.",
+  "author": {
+    "name": "Ezra Hall",
+    "url": "https://github.com/gildaltar"
+  },
+  "homepage": "https://github.com/gildaltar/conversation-handoff",
+  "repository": "https://github.com/gildaltar/conversation-handoff",
+  "license": "MIT",
+  "keywords": [
+    "chatgpt",
+    "context",
+    "handoff",
+    "continuation",
+    "checkpoint",
+    "compression"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Conversation Handoff",
+    "shortDescription": "Continue long chats with less context",
+    "longDescription": "Condense the active conversation into a dense continuation state that preserves decisions, exact values, dependencies, unresolved work, and the next action while removing conversational noise.",
+    "developerName": "Ezra Hall",
+    "category": "Productivity",
+    "capabilities": ["Read"],
+    "defaultPrompt": [
+      "Condense this conversation and prepare a clean-session handoff.",
+      "Checkpoint this chat so I can continue without the context bloat."
+    ]
+  }
+}
