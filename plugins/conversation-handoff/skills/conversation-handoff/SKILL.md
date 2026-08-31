@@ -30,15 +30,16 @@ When activated for the current conversation:
    - `chat` for discussion, research, troubleshooting, advice, planning, analysis, lightweight writing, and ordinary conversational tasks.
    - `work` for persistent artifact creation/editing, websites/apps/repos, deployment, complex documents, multi-file production, or extended tool-driven work.
 6. Keep the serialized handoff hidden unless the user explicitly asks to inspect it.
-7. After the state passes the quality checks below, the normal visible response should be only:
+7. After the state passes the quality checks below, expose only a single user-facing continuation action labeled:
 
    **Open in a new session?**
 
-8. If the user confirms:
-   - Use a supported native new-session, handoff, or navigation action when the current product surface exposes one.
-   - Open the inferred destination and seed it with the serialized continuation state when that action supports seeding context.
-   - The receiving session should continue naturally from the recorded next action rather than presenting a recap.
-9. Never claim a new session was opened if the host does not provide a supported action for doing so. If no such action exists, say so briefly. Do not dump the serialized state unless the user asks for a copyable fallback.
+8. Transport the hidden state using the best supported mechanism available on the current surface, in this order:
+   - A host-native action that can create a fresh Chat or Work session and seed it with the handoff.
+   - On mobile/web fallback surfaces, the one-tap URL transport defined by the repository root `MOBILE.md`.
+   - A copyable serialized payload only when the user explicitly asks for that fallback.
+9. Tapping the visible one-tap action counts as confirmation. Do not require a second yes/no confirmation when the action itself is already a link or native button.
+10. Never claim a new session was opened if the host did not actually open one. Do not invent undocumented session, Work-mode, or auto-submit APIs.
 
 ## State extraction priorities
 
@@ -112,7 +113,7 @@ For every relevant dependency, record:
 
 Examples include uploaded files, Google Drive documents, GitHub repositories, deployments, email/calendar items, websites, generated artifacts, connector state, and environment variables.
 
-Never serialize passwords, authentication tokens, private keys, API keys, or raw credential values. Record only that a credential is configured or required, plus its variable/key name when useful.
+Never serialize passwords, authentication tokens, private keys, API keys, raw verification codes, or raw credential values. Record only that a credential is configured or required, plus its variable/key name when useful.
 
 ## Compression policy
 
@@ -125,6 +126,7 @@ Use adaptive compression rather than a fixed target.
 - Collapse lengthy history into causal summaries: `attempt -> result -> conclusion`.
 - Store rejected approaches as terse guardrails: `do_not_repeat: <approach>; reason: <reason>`.
 - Use references between fields instead of restating the same context.
+- When using URL transport, compress more aggressively while preserving all Tier-A facts that could change the receiving session's next action.
 
 The handoff may be terse, machine-oriented, and unattractive to humans.
 
@@ -141,6 +143,7 @@ The serialized state must tell the receiving model to:
 - Surface a conflict only if the new environment or evidence actually creates one.
 - Do not summarize the handoff back to the user unless asked.
 - Respond as a continuation, not as a new-project intake.
+- Preserve the inferred `chat`/`work` destination as a preference even when the transport surface cannot force that mode.
 
 ## Destination inference
 
@@ -157,6 +160,24 @@ Otherwise choose `chat`.
 
 If both are plausible, choose the mode best suited to the **next unresolved action**, not the historical majority of the conversation.
 
+## Transport behavior
+
+### Host-native transport
+
+If the current ChatGPT host exposes a supported native action that both creates a fresh session and seeds hidden context, use it. Prefer the inferred destination when the host supports choosing Chat versus Work.
+
+### Mobile/web URL transport
+
+When native seeded-session creation is unavailable and the mobile bootstrap is being used, follow `MOBILE.md` exactly. Its normal visible output is one Markdown link labeled **Open in a new session?** whose target carries the encoded receiving prompt.
+
+Do not render the serialized handoff next to the link. Do not require the user to copy it manually.
+
+The transport may open a fresh ChatGPT composer with the prompt prefilled rather than automatically submitting it. Do not pretend otherwise. If the host does not expose a supported way to force Work mode, preserve `destination="work"` in the state and continue in the opened session without re-intake rather than inventing a query parameter.
+
+### Copyable fallback
+
+Only expose the serialized handoff when the user explicitly asks to inspect it or asks for a copyable/manual fallback.
+
 ## Quality checks
 
 Before offering the handoff, verify internally:
@@ -172,13 +193,16 @@ Before offering the handoff, verify internally:
 - Has redundant conversational history been removed?
 - Is the selected destination based on the next action?
 - Would exposing less context materially increase the chance of a wrong continuation?
+- Is the selected transport honest about what the current host can actually do?
 
-If any answer is unsatisfactory, revise the handoff state before presenting **Open in a new session?**
+If any answer is unsatisfactory, revise the handoff state before exposing the continuation action.
 
 ## User-facing output rules
 
-Default user-facing output after successful distillation:
+Default user-facing output after successful distillation is a **single continuation action** labeled:
 
 **Open in a new session?**
 
-Do not print the summary, preserved-context list, token counts, serialized state, or destination explanation unless the user explicitly asks to inspect them.
+On a mobile/web fallback surface, make that label the one-tap launch link defined by `MOBILE.md`.
+
+Do not print the summary, preserved-context list, token counts, serialized state, destination explanation, or raw launch URL unless the user explicitly asks to inspect them.
